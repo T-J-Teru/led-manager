@@ -8,6 +8,7 @@ class mode_manager:
     def __init__ (self, modes, default = None):
         self._process = None
         self._modes = modes
+        self._curr = None
 
         if (default):
             self.run (default)
@@ -24,6 +25,7 @@ class mode_manager:
             self._process.terminate ()
             self._process.join ()
             self._process = None
+            self._curr = None
 
     def run (self, mode):
         print ("Run `%s`" % mode)
@@ -33,6 +35,10 @@ class mode_manager:
         self.stop ()
         self._process = Process (target=self._modes[mode])
         self._process.start ()
+        self._curr = mode
+
+    def current_mode (self):
+        return self._curr
 
 class network_mode_manager (mode_manager):
 
@@ -70,14 +76,22 @@ class network_mode_manager (mode_manager):
                     modes = self._manager.modes ()
                     self.send (bytes ("%d\r\n" % len (modes), "utf-8"))
                     for m in (modes):
-                        self.send (bytes ("%s\r\n" % m, "utf-8"))
+                        if m == self._manager.current_mode ():
+                            pre = '>'
+                        else:
+                            pre = ' '
+                        self.send (bytes ("%s%s\r\n" % (pre, m), "utf-8"))
                 elif pkt[0] == '!':
                     mode = pkt[1:]
-                    print ("Set: %s" % mode)
-                    try:
-                        self._manager.run (mode)
-                    except RuntimeError:
-                        print ("Invalid mode: %s" % mode)
+                    if mode == '':
+                        print ("Stop")
+                        self._manager.stop ()
+                    else:
+                        print ("Set: %s" % mode)
+                        try:
+                            self._manager.run (mode)
+                        except RuntimeError:
+                            print ("Invalid mode: %s" % mode)
                 elif pkt == 'quit':
                     print ("Quit")
                     self._manager.stop ()
