@@ -3,6 +3,15 @@ import time
 import asyncore
 import socket
 import sys
+import psutil
+
+def killtree(pid, including_parent=True):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+
+    if including_parent:
+        parent.kill()
 
 class mode_manager:
     def __init__ (self, modes, default = None):
@@ -22,7 +31,10 @@ class mode_manager:
 
     def stop (self):
         if (self._process and self._process.is_alive ()):
-            self._process.terminate ()
+            # We can't call 'self._process.terminate ()' here as this
+            # does not reliably kill any children of the process being
+            # terminated.  Instead, manually kill all children.
+            killtree (self._process.pid)
             self._process.join ()
             self._process = None
             self._curr = None
@@ -60,7 +72,7 @@ class network_mode_manager (mode_manager):
             data = self.recv(4)
             self._data += data
             #print ("Got: %s" % self._data)
-            if (len (self._data) > 10):
+            if (len (self._data) > 100):
                 print ("too much data")
                 self.close ()
                 return
@@ -90,8 +102,10 @@ class network_mode_manager (mode_manager):
                         print ("Set: %s" % mode)
                         try:
                             self._manager.run (mode)
+                            self.send (bytes ("OK\r\n", "utf-8"))
                         except RuntimeError:
                             print ("Invalid mode: %s" % mode)
+                            self.send (bytes ("FAILED\r\n", "utf-8"))
                 elif pkt == 'quit':
                     print ("Quit")
                     self._manager.stop ()
