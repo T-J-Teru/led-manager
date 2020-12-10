@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>LED Manager</title>
+<style type="text/css" media="screen">
+body { background: #e7e7e7; font-family: Verdana, sans-serif; font-size: 11pt; }
+#page { background: #ffffff; margin: 50px; border: 2px solid #c0c0c0; padding: 10px; }
+#header { background: #4b6983; border: 2px solid #7590ae; text-align: center; padding: 10px; color: #ffffff; }
+#header h1 { color: #ffffff; font-size: 40px}
+#body { padding: 10px; }
+span.tt { font-family: monospace; }
+span.bold { font-weight: bold; }
+a:link { text-decoration: none; font-weight: bold; color: #C00; background: #ffc; }
+a:visited { text-decoration: none; font-weight: bold; color: #999; background: #ffc; }
+a:active { text-decoration: none; font-weight: bold; color: #F00; background: #FC0; }
+a:hover { text-decoration: none; color: #C00; background: #FC0; }
+#please_wait {
+    text-align: center;
+}
+button {
+  background-color: #4b6983;
+  border: 2px solid #4b6983;
+  border-radius: 10px;
+  color: #ffffff;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  font-size: 30px;
+  margin: 20px auto;
+  cursor: pointer;
+  transition-duration: 0.4s;
+  width: min(500px, 80vw);
+}
+button:hover {
+  background-color: white; 
+  color: black; 
+  border: 2px solid #4b6983;
+}
+.current {
+    background-color: #c44141;
+  border: 2px solid  #c44141;
+}
+.current:hover {
+  background-color: white; 
+  color: black; 
+  border: 2px solid  #c44141;
+}
+
+</style>
+<script>
+
+  function load_buttons() {
+      var xmlhttp = new XMLHttpRequest();
+      var url = "cgi-bin/led-manager.py?action=status";
+
+      xmlhttp.onreadystatechange = function() {
+	  if (this.readyState == 4 && this.status == 200) {
+              var my_json = JSON.parse(this.responseText);
+              myFunction(my_json);
+	  }
+      };
+      xmlhttp.open("GET", url, true);
+      xmlhttp.send();
+
+      function myFunction(arr) {
+	  var out = "";
+	  var i;
+
+	  var element = document.getElementById("please_wait");
+	  element.parentNode.removeChild(element);
+	  
+	  for(i = 0; i < arr.length; i++) {
+	      c = 'button'
+	      if (arr[i].current) {
+		  c += ' current'
+	      }
+	      out += '<button class="' + c + '" onclick="update_current_mode(this, '
+		  + "'" + arr[i].name + "'" + ')">' + arr[i].name + '</button>'
+	  }
+	  document.getElementById("buttons").innerHTML = out;
+      }
+  }
+
+  function update_current_mode(btn,mode) {
+
+      var img = document.createElement('img');
+      img.setAttribute("id", "button_spinner");
+      img.src = 'spinner.gif'
+      img.alt = 'loading'
+      btn.appendChild (img)
+
+      var xmlhttp = new XMLHttpRequest();
+      var url = "cgi-bin/led-manager.py?action=set&mode=" + mode;
+
+      xmlhttp.onreadystatechange = function() {
+	  if (this.readyState == 4 && this.status == 200) {
+              var my_json = JSON.parse(this.responseText);
+              change_button_class(my_json);
+	  }
+      };
+      xmlhttp.open("GET", url, true);
+      xmlhttp.send();
+
+      function change_button_class(json_obj) {
+	  // TODO, check JSON_OBJ for the 'status' field, and only
+	  // change the button state if the status is 'OK'.
+
+	  // Remove the 'current' class from any button that currently has it.
+	  var elems = document.querySelectorAll(".current");
+
+	  [].forEach.call(elems, function(el) {
+	      el.classList.remove("current");
+	  });
+
+	  // Add the 'current' class to BTN.
+	  btn.classList.add("current");
+	  btn.removeChild (img)
+      }
+  }
+
+</script>
+</head>
+<body onload="load_buttons()">
+  <div id="header">
+    <h1>LED Manager</h1>
+  </div>
+  <div id="please_wait">
+    <h2> Please Wait </h2>
+    Detecting LED options.<br/>
+    <img src="spinner.gif" alt="loading" />
+  </div>
+  <div id="buttons">
+  </div>
+</body>
+</html>
