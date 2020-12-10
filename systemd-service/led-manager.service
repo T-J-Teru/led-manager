@@ -2,7 +2,7 @@
 Description=Run scripts to power plugin LED lights
 
 [Service]
-ExecStart=/usr/bin/python3 ....PATH TO CHECKOUT..../ctrl/led-manager.py
+ExecStart=/usr/bin/python3 ....PATH TO CHECKOUT..../ctrl/led-manager.py --config ....PATH TO CHECKOUT..../tree-scripts/led-manager.conf
 User=....USER....
 Group=nogroup
 WorkingDirectory=....PATH TO CHECKOUT..../ctrl
