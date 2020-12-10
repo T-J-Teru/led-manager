@@ -11,7 +11,9 @@ user who checked out the repository.
 The script will be run as that user rather than as root.
 
 ```
-cp systemd-service/led-manager.service /etc/systemd/system/
+sudo cp systemd-service/led-manager.service /etc/systemd/system/
+sudo systemctl start led-manager.service
+sudo systemctl enable led-manager.service
 ```
 
 ### web interface
