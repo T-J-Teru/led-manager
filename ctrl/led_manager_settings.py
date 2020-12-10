@@ -1,4 +1,5 @@
 import configparser
+import os
 
 class led_manager_settings:
     def __init__ (self, filename):
@@ -14,6 +15,16 @@ class led_manager_settings:
 
         if config.has_option ('settings', 'default'):
             self._default = config.get ('settings', 'default')
+
+        # If the 'scripts' value in the 'DEFAULT' section is a
+        # relative path then convert it to an absolute path relative
+        # to wherever the config file is located.
+        if config.has_option ('DEFAULT', 'scripts'):
+            pth = config.get ('DEFAULT', 'scripts')
+            if not os.path.isabs (pth):
+                pth = os.path.join (os.path.dirname (filename), pth)
+                pth = os.path.abspath (pth)
+                config.set ('DEFAULT', 'scripts', pth)
 
         for section in config.sections ():
             if section == 'settings':
